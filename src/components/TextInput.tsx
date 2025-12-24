@@ -1,8 +1,10 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Sparkles, Loader2, FileText } from "lucide-react";
+import { Sparkles, Loader2, FileText, Link, Globe } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 interface TextInputProps {
   onAnalyze: (text: string) => void;
@@ -24,11 +26,65 @@ const sampleTexts = [
   },
 ];
 
+// Regex to detect URLs
+const urlRegex = /^(https?:\/\/)?([\da-z.-]+)\.([a-z.]{2,6})([\/\w .-]*)*\/?$/i;
+
 export function TextInput({ onAnalyze, isLoading }: TextInputProps) {
   const [text, setText] = useState("");
+  const [isScraping, setIsScraping] = useState(false);
+  const { toast } = useToast();
 
-  const handleSubmit = () => {
-    if (text.trim()) {
+  const isUrl = urlRegex.test(text.trim());
+  const isProcessing = isLoading || isScraping;
+
+  const handleSubmit = async () => {
+    if (!text.trim()) return;
+
+    if (isUrl) {
+      // Scrape the URL first, then analyze
+      setIsScraping(true);
+      try {
+        toast({
+          title: "Scraping URL",
+          description: "Fetching comments and content from the page...",
+        });
+
+        const { data, error } = await supabase.functions.invoke('scrape-url', {
+          body: { url: text.trim() }
+        });
+
+        if (error) {
+          throw new Error(error.message || 'Failed to scrape URL');
+        }
+
+        if (!data.success) {
+          throw new Error(data.error || 'Failed to scrape URL');
+        }
+
+        const content = data.content;
+        if (!content || content.trim().length < 10) {
+          throw new Error('Could not extract enough content from the URL');
+        }
+
+        toast({
+          title: "Content Fetched",
+          description: "Now analyzing the scraped content...",
+        });
+
+        // Analyze the scraped content
+        onAnalyze(content);
+      } catch (error) {
+        console.error('Scraping error:', error);
+        toast({
+          title: "Scraping Failed",
+          description: error instanceof Error ? error.message : "Failed to scrape URL",
+          variant: "destructive",
+        });
+      } finally {
+        setIsScraping(false);
+      }
+    } else {
+      // Direct text analysis
       onAnalyze(text);
     }
   };
@@ -47,17 +103,30 @@ export function TextInput({ onAnalyze, isLoading }: TextInputProps) {
         <div className="flex items-center gap-2 mb-4">
           <FileText className="w-5 h-5 text-primary" />
           <h2 className="text-lg font-display font-semibold text-foreground">
-            Enter Text to Analyze
+            Enter Text or URL to Analyze
           </h2>
         </div>
         
-        <Textarea
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          placeholder="Paste your review, social media post, or any text you want to analyze..."
-          className="min-h-[160px] bg-muted/50 border-border/50 focus:border-primary/50 resize-none text-foreground placeholder:text-muted-foreground"
-          disabled={isLoading}
-        />
+        <div className="relative">
+          <Textarea
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            placeholder="Paste your review, social media post, or a URL (Instagram, Twitter, etc.) to analyze comments..."
+            className="min-h-[160px] bg-muted/50 border-border/50 focus:border-primary/50 resize-none text-foreground placeholder:text-muted-foreground"
+            disabled={isProcessing}
+          />
+          
+          {isUrl && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="absolute top-3 right-3 flex items-center gap-1.5 px-2 py-1 rounded-md bg-primary/20 text-primary text-xs font-medium"
+            >
+              <Globe className="w-3 h-3" />
+              URL Detected
+            </motion.div>
+          )}
+        </div>
         
         <div className="mt-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="flex flex-wrap gap-2">
@@ -66,7 +135,7 @@ export function TextInput({ onAnalyze, isLoading }: TextInputProps) {
               <button
                 key={sample.label}
                 onClick={() => handleSampleClick(sample.text)}
-                disabled={isLoading}
+                disabled={isProcessing}
                 className="text-xs px-2 py-1 rounded-md bg-secondary hover:bg-secondary/80 text-secondary-foreground transition-colors disabled:opacity-50"
               >
                 {sample.label}
@@ -76,15 +145,25 @@ export function TextInput({ onAnalyze, isLoading }: TextInputProps) {
           
           <Button
             onClick={handleSubmit}
-            disabled={!text.trim() || isLoading}
+            disabled={!text.trim() || isProcessing}
             variant="glow"
             size="lg"
             className="w-full sm:w-auto"
           >
-            {isLoading ? (
+            {isScraping ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Scraping...
+              </>
+            ) : isLoading ? (
               <>
                 <Loader2 className="w-4 h-4 animate-spin" />
                 Analyzing...
+              </>
+            ) : isUrl ? (
+              <>
+                <Link className="w-4 h-4" />
+                Scrape & Analyze
               </>
             ) : (
               <>
@@ -97,7 +176,7 @@ export function TextInput({ onAnalyze, isLoading }: TextInputProps) {
       </div>
       
       <p className="text-xs text-muted-foreground text-center">
-        Powered by AI • Analyzes sentiment, extracts insights, and identifies key themes
+        Powered by AI • Paste a URL to auto-scrape comments, or enter text directly for analysis
       </p>
     </motion.div>
   );
