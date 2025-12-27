@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Sparkles, Loader2, FileText, Link, Globe } from "lucide-react";
+import { Sparkles, Loader2, FileText, Link, Globe, Youtube, MessageCircle, Newspaper, BookOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
@@ -179,16 +179,16 @@ export function TextInput({ onAnalyze, isLoading }: TextInputProps) {
         <p className="text-xs text-muted-foreground">
           Powered by AI • Paste a URL to auto-scrape comments, or enter text directly for analysis
         </p>
-        <p className="text-xs text-muted-foreground/70 flex items-center justify-center gap-1.5 flex-wrap">
+        <p className="text-xs text-muted-foreground/70 flex items-center justify-center gap-2 flex-wrap">
           <Globe className="w-3 h-3" />
-          <span>Supported platforms:</span>
-          <span className="text-primary/80">YouTube</span>
+          <span>Supported:</span>
+          <span className="text-primary/80 flex items-center gap-1"><Youtube className="w-3 h-3" />YouTube</span>
           <span>•</span>
-          <span className="text-primary/80">Reddit</span>
+          <span className="text-primary/80 flex items-center gap-1"><MessageCircle className="w-3 h-3" />Reddit</span>
           <span>•</span>
-          <span className="text-primary/80">News sites</span>
+          <span className="text-primary/80 flex items-center gap-1"><Newspaper className="w-3 h-3" />News sites</span>
           <span>•</span>
-          <span className="text-primary/80">Blogs</span>
+          <span className="text-primary/80 flex items-center gap-1"><BookOpen className="w-3 h-3" />Blogs</span>
         </p>
       </div>
     </motion.div>
