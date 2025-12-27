@@ -56,6 +56,21 @@ serve(async (req) => {
 
     if (!response.ok) {
       console.error('Firecrawl API error:', data);
+      
+      // Check for unsupported website error
+      const errorMessage = data.error || '';
+      if (errorMessage.includes('not currently supported') || errorMessage.includes('enterprise')) {
+        const domain = new URL(formattedUrl).hostname.replace('www.', '');
+        return new Response(
+          JSON.stringify({ 
+            success: false, 
+            error: `${domain} is not supported for scraping. Try pasting the text content directly instead.`,
+            unsupported: true
+          }),
+          { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      
       return new Response(
         JSON.stringify({ success: false, error: data.error || `Failed to scrape URL (status ${response.status})` }),
         { status: response.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
