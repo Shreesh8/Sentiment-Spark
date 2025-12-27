@@ -175,9 +175,22 @@ export function TextInput({ onAnalyze, isLoading }: TextInputProps) {
         </div>
       </div>
       
-      <p className="text-xs text-muted-foreground text-center">
-        Powered by AI • Paste a URL to auto-scrape comments, or enter text directly for analysis
-      </p>
+      <div className="text-center space-y-1">
+        <p className="text-xs text-muted-foreground">
+          Powered by AI • Paste a URL to auto-scrape comments, or enter text directly for analysis
+        </p>
+        <p className="text-xs text-muted-foreground/70 flex items-center justify-center gap-1.5 flex-wrap">
+          <Globe className="w-3 h-3" />
+          <span>Supported platforms:</span>
+          <span className="text-primary/80">YouTube</span>
+          <span>•</span>
+          <span className="text-primary/80">Reddit</span>
+          <span>•</span>
+          <span className="text-primary/80">News sites</span>
+          <span>•</span>
+          <span className="text-primary/80">Blogs</span>
+        </p>
+      </div>
     </motion.div>
   );
 }
