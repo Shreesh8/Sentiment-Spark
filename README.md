@@ -1,73 +1,122 @@
-# Welcome to your Lovable project
+# Sentiment Spark
 
-## Project info
+Analyze sentiment from any text or web page and get clear, actionable insights. Paste text directly or provide a URL; the app will scrape the page content and run an AI-powered sentiment analysis with confidence scores, sentence breakdowns, keywords, and a concise summary.
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+## Highlights
 
-## How can I edit this code?
+- Powerful analysis: overall sentiment, score, confidence, sentence-level details, keywords, insights, and summary
+- Paste text or a URL: auto-scrapes supported pages (YouTube, Reddit, blogs, news, etc.)
+- Modern UI: Vite + React + TypeScript + Tailwind + shadcn/ui
+- Serverless functions: Supabase Edge Functions for scraping and analysis
 
-There are several ways of editing your application.
+## How It Works
 
-**Use Lovable**
+1. Enter text or a URL on the Analyze page.
+2. If it’s a URL, the `scrape-url` Supabase Edge Function uses Firecrawl to extract main content.
+3. The text is sent to the `analyze-sentiment` Supabase Edge Function, which calls an AI gateway to produce a structured JSON analysis.
+4. The UI displays a sentiment gauge, sentence breakdown, insights, keywords, and a summary.
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
+## Tech Stack
 
-Changes made via Lovable will be committed automatically to this repo.
+- Vite, React, TypeScript
+- Tailwind CSS, shadcn/ui
+- Supabase (`@supabase/supabase-js`) for Edge Functions
+- Optional: TanStack Query, Framer Motion, Recharts for UX/visuals
 
-**Use your preferred IDE**
+## Prerequisites
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+- Node.js 18+ and npm
+- A Supabase project (URL + anon/publishable key)
+- API keys for the functions:
+  - `LOVABLE_API_KEY` (used by `analyze-sentiment` to call the AI gateway)
+  - `FIRECRAWL_API_KEY` (used by `scrape-url` to fetch page content)
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+## Quick Start (Local)
 
-Follow these steps:
+```bash
+# Install dependencies
+npm install
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
+# Start the dev server (http://localhost:5173 by default)
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+Create a `.env` (or `.env.local`) at the repo root to configure Supabase for the frontend:
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+```bash
+VITE_SUPABASE_URL=your_supabase_url
+VITE_SUPABASE_PUBLISHABLE_KEY=your_supabase_anon_or_publishable_key
+```
 
-**Use GitHub Codespaces**
+The app will use these to invoke Supabase Edge Functions from the browser.
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+## Edge Functions (Supabase)
 
-## What technologies are used for this project?
+This repo includes two functions under `supabase/functions/`:
 
-This project is built with:
+- `analyze-sentiment`: accepts `{ text }` and returns structured sentiment analysis.
+  - Requires secret: `LOVABLE_API_KEY`
+- `scrape-url`: accepts `{ url }` and returns `{ success, content }` with extracted main content.
+  - Requires secret: `FIRECRAWL_API_KEY`
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+Set the secrets in Supabase (Dashboard → Project Settings → Functions → Environment Variables) or via CLI:
 
-## How can I deploy this project?
+```bash
+supabase functions secrets set --name analyze-sentiment LOVABLE_API_KEY=your_key
+supabase functions secrets set --name scrape-url FIRECRAWL_API_KEY=your_key
+```
 
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
+Deploy the functions:
 
-## Can I connect a custom domain to my Lovable project?
+```bash
+supabase functions deploy analyze-sentiment
+supabase functions deploy scrape-url
+```
 
-Yes, you can!
+If you’re testing locally with the Supabase CLI, also link your project and serve functions as needed.
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+## Using the App
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+1. Go to the Analyze page.
+2. Paste text directly, or paste a URL to scrape and analyze.
+3. Click “Analyze Sentiment” (or “Scrape & Analyze” for URLs).
+4. Review results: overall sentiment, confidence, sentence breakdown, keywords, insights, and summary.
+
+Notes:
+
+- Scraping support varies by site; some domains may be unsupported by Firecrawl.
+- Rate limits or missing API keys will be surfaced as errors in the UI toasts.
+
+## Scripts
+
+```bash
+# Start development server
+npm run dev
+
+# Production build
+npm run build
+
+# Preview built app
+npm run preview
+
+# Lint
+npm run lint
+```
+
+## SEO & Crawling
+
+`public/robots.txt` currently allows all crawlers. Add a sitemap line if you have one:
+
+```
+Sitemap: https://your-domain.com/sitemap.xml
+```
+
+## Troubleshooting
+
+- Ensure `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` are set and valid.
+- For function errors, verify `LOVABLE_API_KEY` and `FIRECRAWL_API_KEY` are configured in Supabase.
+- Some sites cannot be scraped; paste text content directly as a fallback.
+
+---
+
+If you’d like, I can run a quick local check (install and dev) or help wire up Supabase secrets and function deploys.
